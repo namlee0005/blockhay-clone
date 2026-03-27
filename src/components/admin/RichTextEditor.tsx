@@ -213,6 +213,7 @@ function Toolbar({ editor }: { editor: Editor }) {
 
 export default function RichTextEditor({ content, onChange, placeholder }: Props) {
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       Image.configure({ allowBase64: false, HTMLAttributes: { class: "rounded-lg max-w-full" } }),
