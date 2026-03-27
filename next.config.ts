@@ -17,8 +17,11 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["192.168.1.56", "localhost"],
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "cdn.sanity.io" },
+            { protocol: "https", hostname: "cdn.sanity.io" },
       { protocol: "https", hostname: "assets.coingecko.com" },
+      { protocol: "https", hostname: "www.google.com" },
+      { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "**" },
     ],
   },
   async headers() {
