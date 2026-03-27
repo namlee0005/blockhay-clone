@@ -1,11 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/lib/db";
 import { Article } from "@/models/Article";
+import { Category } from "@/models/Category";
 
 export const revalidate = 60;
 
+// lean() returns BSON types; after JSON.parse(JSON.stringify()) these become plain JS:
+//   ObjectId → string, Date → ISO string
 interface ArticleDoc {
   _id: string;
   title: string;
@@ -15,18 +18,37 @@ interface ArticleDoc {
   featuredImageUrl: string;
   featuredImageAlt: string;
   categorySlug: string;
+  categoryName?: string; // joined from Category
+}
+
+interface CategoryDoc {
+  slug: string;
+  name: string;
 }
 
 export default async function HomePage() {
   await connectDB();
 
-  const raw = await Article.find()
-    .sort({ publishedAt: -1 })
-    .limit(10)
-    .select("-body")
-    .lean<ArticleDoc[]>();
+  const [rawArticles, rawCategories] = await Promise.all([
+    Article.find({ status: "published" })
+      .sort({ publishedAt: -1 })
+      .limit(10)
+      .select("title slug excerpt publishedAt featuredImageUrl featuredImageAlt categorySlug")
+      .lean(),
+    Category.find().select("slug name").lean(),
+  ]);
 
-  const [featured, ...articles] = raw;
+  // Safe RSC serialization: eliminates ObjectId/Date BSON types in one shot
+  const articles: ArticleDoc[] = JSON.parse(JSON.stringify(rawArticles));
+  const categories: CategoryDoc[] = JSON.parse(JSON.stringify(rawCategories));
+
+  const categoryNameMap = Object.fromEntries(categories.map((c) => [c.slug, c.name]));
+  const enriched = articles.map((a) => ({
+    ...a,
+    categoryName: categoryNameMap[a.categorySlug] ?? a.categorySlug,
+  }));
+
+  const [featured, ...rest] = enriched;
 
   const websiteJsonLd = {
     "@context": "https://schema.org",
@@ -36,12 +58,12 @@ export default async function HomePage() {
         "@id": "https://blockhay.com/#website",
         url: "https://blockhay.com/",
         name: "Blockhay",
-        inLanguage: "vi",
+        inLanguage: "en",
         potentialAction: {
           "@type": "SearchAction",
           target: {
             "@type": "EntryPoint",
-            urlTemplate: "https://blockhay.com/tim-kiem?q={search_term_string}",
+            urlTemplate: "https://blockhay.com/search?q={search_term_string}",
           },
           "query-input": "required name=search_term_string",
         },
@@ -70,9 +92,9 @@ export default async function HomePage() {
       />
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Hero — featured article (LCP target) */}
+        {/* Hero — featured article (LCP target: use priority + fill) */}
         {featured && (
-          <section aria-label="Bài viết nổi bật" className="mb-10">
+          <section aria-label="Featured article" className="mb-10">
             <Link href={`/${featured.categorySlug}/${featured.slug}`}>
               <div className="relative w-full aspect-[16/7] rounded-xl overflow-hidden">
                 <Image
@@ -86,7 +108,7 @@ export default async function HomePage() {
               </div>
               <div className="mt-4">
                 <span className="text-xs font-semibold uppercase tracking-wide text-orange-500">
-                  {featured.categorySlug}
+                  {featured.categoryName}
                 </span>
                 <h1 className="mt-1 text-2xl md:text-3xl font-bold leading-tight text-slate-900 dark:text-white">
                   {featured.title}
@@ -100,14 +122,14 @@ export default async function HomePage() {
         )}
 
         {/* Article grid */}
-        <section aria-label="Tin tức mới nhất">
+        <section aria-label="Latest articles">
           <h2 className="text-xl font-bold mb-4 text-slate-900 dark:text-white">
-            Tin tức mới nhất
+            Latest Articles
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {articles.map((article) => (
+            {rest.map((article) => (
               <Link
-                key={String(article._id)}
+                key={article._id}
                 href={`/${article.categorySlug}/${article.slug}`}
                 className="group flex flex-col"
               >
@@ -122,7 +144,7 @@ export default async function HomePage() {
                 </div>
                 <div className="mt-3 flex-1">
                   <span className="text-xs font-medium text-orange-500 uppercase">
-                    {article.categorySlug}
+                    {article.categoryName}
                   </span>
                   <h3 className="mt-1 font-semibold leading-snug text-slate-900 dark:text-white group-hover:text-orange-500 transition-colors line-clamp-2">
                     {article.title}
@@ -130,8 +152,10 @@ export default async function HomePage() {
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
                     {article.excerpt}
                   </p>
-                  <time dateTime={String(article.publishedAt)} className="mt-2 block text-xs text-slate-400">
-                    {new Date(article.publishedAt).toLocaleDateString("vi-VN")}
+                  <time dateTime={article.publishedAt} className="mt-2 block text-xs text-slate-400">
+                    {new Date(article.publishedAt).toLocaleDateString("en-US", {
+                      year: "numeric", month: "short", day: "numeric",
+                    })}
                   </time>
                 </div>
               </Link>
@@ -141,9 +165,9 @@ export default async function HomePage() {
 
         <div
           className="mt-10 h-24 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center text-sm text-slate-400"
-          aria-label="Quảng cáo"
+          aria-label="Advertisement"
         >
-          Quảng cáo
+          Advertisement
         </div>
       </div>
     </>
