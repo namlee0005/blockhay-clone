@@ -21,12 +21,6 @@ const nextConfig: NextConfig = {
       { protocol: "http", hostname: "**" }
     ],
   },
-      { protocol: "https", hostname: "assets.coingecko.com" },
-      { protocol: "https", hostname: "www.google.com" },
-      { protocol: "https", hostname: "images.unsplash.com" },
-      { protocol: "https", hostname: "**" },
-    ],
-  },
   async headers() {
     return [
       {
