@@ -1,10 +1,16 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const dotenv = require('dotenv');
+const path = require('path');
+
+// Next.js uses .env.local primarily, but load .env as fallback
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 async function seedAdmin() {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
-    console.error("❌ Thiếu biến môi trường MONGODB_URI");
+    console.error("❌ Thiếu biến môi trường MONGODB_URI (Đã kiểm tra .env và .env.local)");
     process.exit(1);
   }
 
