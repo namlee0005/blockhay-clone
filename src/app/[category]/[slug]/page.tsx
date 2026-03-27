@@ -1,229 +1,89 @@
 import { notFound } from "next/navigation";
-import Image from "next/image";
-import Link from "next/link";
-import Script from "next/script";
 import type { Metadata } from "next";
-import { connectDB } from "@/lib/db";
-import { Article as ArticleModel } from "@/models/Article";
+import { ArticleBody } from "@/components/articles/ArticleBody";
+import { ArticleMeta } from "@/components/articles/ArticleMeta";
+import { RelatedArticles } from "@/components/articles/RelatedArticles";
+import { BreadcrumbList } from "@/components/seo/BreadcrumbList";
+import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
+import { getArticleBySlug, getRelatedArticles } from "@/lib/api/articles";
+import { Image } from "next/image";
 
-// On-demand ISR: revalidated by /api/revalidate on article publish/update
-export const revalidate = false;
-
-interface Params {
+interface ArticlePageProps {
   params: Promise<{ category: string; slug: string }>;
 }
 
-// After JSON.parse(JSON.stringify(lean())):
-//   ObjectId → string, Date → ISO 8601 string
-interface ArticleDoc {
-  _id: string;
-  title: string;
-  slug: string;
-  excerpt: string;
-  body: string;
-  publishedAt: string;
-  updatedAt: string;
-  schemaType: "NewsArticle" | "Article" | "FAQPage";
-  sponsored: boolean;
-  featuredImageUrl: string;
-  featuredImageAlt: string;
-  categorySlug: string;
-  authorSlug: string;
-  tags: string[];
-  seo: {
-    metaTitle?: string;
-    metaDesc?: string;
-    canonicalUrl?: string;
-  };
-}
-
-// User model has no slug field yet; authorSlug is used as a display fallback
-// until a slug field is added to IUser and a proper lookup is wired up
-
-export async function generateStaticParams() {
-  try {
-    await connectDB();
-    const articles = await ArticleModel.find({ status: "published" })
-      .select("slug categorySlug")
-      .lean<{ slug: string; categorySlug: string }[]>();
-    return articles.map(({ slug, categorySlug }) => ({ slug, category: categorySlug }));
-  } catch {
-    // DB unavailable at build time — pages will be generated on first request
-    return [];
-  }
-}
-
-export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  await connectDB();
-  const { category, slug } = await params;
-  const raw = await ArticleModel.findOne({ slug, categorySlug: category, status: "published" })
-    .select("title excerpt featuredImageUrl featuredImageAlt publishedAt updatedAt seo")
-    .lean();
-  if (!raw) return {};
-  const article: Pick<ArticleDoc, "title" | "excerpt" | "featuredImageUrl" | "featuredImageAlt" | "publishedAt" | "updatedAt" | "seo"> =
-    JSON.parse(JSON.stringify(raw));
-
-  const metaTitle = article.seo?.metaTitle || article.title;
-  const metaDesc = article.seo?.metaDesc || article.excerpt;
-  const canonical = article.seo?.canonicalUrl || `/${category}/${slug}`;
-
+export async function generateMetadata({
+  params,
+}: ArticlePageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const article = await getArticleBySlug(slug);
+  if (!article) return {};
   return {
-    title: metaTitle,
-    description: metaDesc,
-    alternates: {
-      canonical,
-      languages: { en: `https://blockhay.com/${category}/${slug}`, "x-default": `https://blockhay.com/${category}/${slug}` },
-    },
+    title: article.seo.metaTitle ?? article.title,
+    description: article.seo.metaDesc ?? article.excerpt,
+    alternates: { canonical: article.seo.canonicalUrl },
     openGraph: {
-      title: metaTitle,
-      description: metaDesc,
-      type: "article",
-      publishedTime: article.publishedAt,
-      modifiedTime: article.updatedAt,
-      images: [{ url: article.featuredImageUrl, width: 1200, height: 630, alt: article.featuredImageAlt }],
+      images: [{ url: article.featuredImage.url, alt: article.featuredImage.alt }],
     },
-    twitter: { card: "summary_large_image", title: metaTitle, description: metaDesc },
   };
 }
 
-export default async function ArticlePage({ params }: Params) {
-  await connectDB();
+export default async function ArticlePage({ params }: ArticlePageProps) {
   const { category, slug } = await params;
+  const [article, related] = await Promise.all([
+    getArticleBySlug(slug),
+    getRelatedArticles(slug, category),
+  ]);
 
-  const raw = await ArticleModel.findOne({ slug, categorySlug: category, status: "published" })
-    .lean();
-  if (!raw) notFound();
-
-  // Serialize all BSON types to plain JSON — safe to pass through RSC boundary
-  const article: ArticleDoc = JSON.parse(JSON.stringify(raw));
-
-  // User model has no slug field — display authorSlug as author name until slug is added to IUser
-  const authorName = article.authorSlug;
-
-  const canonicalPath = `/${category}/${slug}`;
-
-  const showUpdated = article.updatedAt !== article.publishedAt;
-
-  const newsArticleJsonLd = {
-    "@context": "https://schema.org",
-    "@type": article.schemaType,
-    headline: article.title,
-    description: article.excerpt,
-    image: [article.featuredImageUrl],
-    datePublished: article.publishedAt,
-    dateModified: article.updatedAt,
-    author: {
-      "@type": "Person",
-      name: authorName,
-      url: `https://blockhay.com/author/${article.authorSlug}`,
-    },
-    publisher: {
-      "@type": "Organization",
-      name: "Blockhay",
-      "@id": "https://blockhay.com/#organization",
-    },
-    articleSection: category,
-    keywords: article.tags.join(", "),
-    mainEntityOfPage: { "@type": "WebPage", "@id": `https://blockhay.com${canonicalPath}` },
-  };
-
-  const breadcrumbJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "https://blockhay.com/" },
-      { "@type": "ListItem", position: 2, name: category, item: `https://blockhay.com/${category}` },
-      { "@type": "ListItem", position: 3, name: article.title, item: `https://blockhay.com${canonicalPath}` },
-    ],
-  };
+  if (!article || article.status !== "published") notFound();
 
   return (
-    <>
-      <Script id="article-jsonld" type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(newsArticleJsonLd) }} />
-      <Script id="breadcrumb-jsonld" type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+    /*
+      Same rule: no background override. Inherits from layout <body>.
+      Prose text colors use dark:prose-invert so TipTap HTML body copy
+      inverts correctly in dark mode without manual overrides.
+    */
+    <article className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+      <ArticleJsonLd article={article} />
+      <BreadcrumbList category={category} title={article.title} slug={slug} />
 
-      <article className="max-w-3xl mx-auto px-4 py-10">
-        <nav aria-label="Breadcrumb" className="text-sm text-slate-500 mb-4">
-          <ol className="flex items-center gap-1">
-            <li><Link href="/" className="hover:underline">Home</Link></li>
-            <li aria-hidden="true">/</li>
-            <li><Link href={`/${category}`} className="hover:underline capitalize">{category}</Link></li>
-            <li aria-hidden="true">/</li>
-            <li className="text-slate-800 dark:text-slate-200 truncate max-w-[200px]">{article.title}</li>
-          </ol>
-        </nav>
-
-        {article.sponsored && (
-          <p className="text-xs text-slate-400 mb-2 uppercase tracking-wide font-medium">
-            Sponsored Content
-          </p>
-        )}
-
-        <h1 className="text-2xl md:text-4xl font-bold leading-tight text-slate-900 dark:text-white">
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">
           {article.title}
         </h1>
+        <ArticleMeta
+          author={article.author}
+          publishedAt={article.publishedAt}
+          sponsored={article.sponsored}
+        />
+      </header>
 
-        <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-500">
-          {(authorName) && (
-            <span>By {authorName}</span>
-          )}
-          <span aria-hidden="true">·</span>
-          <time dateTime={article.publishedAt}>
-            {new Date(article.publishedAt).toLocaleDateString("en-US", {
-              year: "numeric", month: "long", day: "numeric",
-            })}
-          </time>
-          {showUpdated && (
-            <>
-              <span aria-hidden="true">·</span>
-              <span>
-                Updated:{" "}
-                <time dateTime={article.updatedAt}>
-                  {new Date(article.updatedAt).toLocaleDateString("en-US", {
-                    year: "numeric", month: "short", day: "numeric",
-                  })}
-                </time>
-              </span>
-            </>
-          )}
-        </div>
-
-        <div className="relative mt-6 w-full aspect-[16/9] rounded-xl overflow-hidden">
+      {article.featuredImage.url && (
+        <div className="mb-8 overflow-hidden rounded-lg">
           <Image
-            src={article.featuredImageUrl}
-            alt={article.featuredImageAlt}
-            fill
+            src={article.featuredImage.url}
+            alt={article.featuredImage.alt}
+            width={800}
+            height={450}
             priority
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, 768px"
+            className="w-full object-cover"
           />
         </div>
+      )}
 
-        {/* Body — stored as HTML from editor */}
-        <div
-          className={`mt-8 prose prose-lg dark:prose-invert max-w-none${article.sponsored ? " article-sponsored" : ""}`}
-          // Article body comes from our own DB, not user-generated content
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{ __html: article.body }}
-        />
+      <ArticleBody
+        html={article.body}
+        className="prose prose-slate max-w-none dark:prose-invert"
+      />
 
-        {article.tags.length > 0 && (
-          <footer className="mt-8 flex flex-wrap gap-2">
-            {article.tags.map((tag) => (
-              <Link
-                key={tag}
-                href={`/${category}?tag=${encodeURIComponent(tag)}`}
-                rel="nofollow"
-                className="px-3 py-1 text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full hover:bg-orange-50 hover:text-orange-600 transition-colors"
-              >
-                #{tag}
-              </Link>
-            ))}
-          </footer>
-        )}
-      </article>
-    </>
+      {related.length > 0 && (
+        <aside className="mt-16 border-t border-slate-200 pt-10 dark:border-slate-700">
+          <h2 className="mb-6 text-xl font-semibold text-slate-900 dark:text-slate-100">
+            Related Articles
+          </h2>
+          <RelatedArticles articles={related} />
+        </aside>
+      )}
+    </article>
   );
 }
