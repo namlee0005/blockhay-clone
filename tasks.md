@@ -11,21 +11,21 @@
 - [ ] Configure `next-seo` defaults; inject `Organization` + `WebSite` + `SearchAction` JSON-LD in root layout
 - [ ] Configure `next-intl`: `vi` default (no prefix), `en` via `/en/` sub-path
 - [ ] Build `HreflangTags` RSC: emits `hreflang="vi"`, `hreflang="en"`, `hreflang="x-default"` per page
-- [ ] Scaffold `/robots.txt` and `/sitemap.xml` via `app/sitemap.ts` with `xhtml:link` alternate entries
+- [x] Scaffold `/robots.txt` and `/sitemap.xml` via `app/sitemap.ts` with `xhtml:link` alternate entries
 - [ ] Deploy to Vercel; confirm Sanity webhook triggers ISR revalidation on publish
 
 ## Phase 2: Content Pages & SEO Implementation
 
-- [ ] Build Home page (ISR 60s): hero article, multi-column grid, trending sidebar
-- [ ] Build Article detail page (`/[category]/[slug]`, ISR 300s):
-  - [ ] `NewsArticle` JSON-LD: `author`, `datePublished`, `dateModified`, `image`, `publisher`, `articleSection`
-  - [ ] `BreadcrumbList` JSON-LD
-  - [ ] `<time datetime="ISO8601">` for publish and updated dates
+- [x] Build Home page (ISR 60s): hero article, multi-column grid, trending sidebar
+- [x] Build Article detail page (`/[category]/[slug]`, ISR 300s):
+  - [x] `NewsArticle` JSON-LD: `author`, `datePublished`, `dateModified`, `image`, `publisher`, `articleSection`
+  - [x] `BreadcrumbList` JSON-LD
+  - [x] `<time datetime="ISO8601">` for publish and updated dates
   - [ ] `rel="nofollow sponsored"` when `article.sponsored === true`
   - [ ] OG image via `@vercel/og` at 1200×630 with title overlay
 - [ ] Build Category listing page: `CollectionPage` JSON-LD, cursor-based pagination
 - [ ] Build Author profile page (`/tac-gia/[slug]`): `Person` JSON-LD with `sameAs`
-- [ ] Build Price page (`/bang-gia`, SSR): `Dataset` JSON-LD, sortable CoinGecko table
+- [x] Build Price page (`/bang-gia`, SSR): `Dataset` JSON-LD, sortable CoinGecko table
 - [ ] Set up Meilisearch: Sanity publish webhook → index update; Vietnamese tokenizer config
 - [ ] Build Search UI (`/tim-kiem`, CSR): InstantSearch with Vietnamese keyboard support
 - [ ] Split sitemap: `articles.xml` (ISR 1h, priority 0.8), `categories.xml` (0.9), `authors.xml` (0.5)
@@ -37,8 +37,8 @@
 
 - [ ] Add skeleton loaders for all CSR components (CLS elimination)
 - [ ] Add `<link rel="preconnect preload">` for CoinGecko, Sanity CDN, font origins
-- [ ] Wrap ad slots in `next/script strategy="lazyOnload"` + `Suspense`
-- [ ] Configure Edge caching for `/bang-gia` SSR (stale-while-revalidate 10s)
+- [x] Wrap ad slots in `next/script strategy="lazyOnload"` + `Suspense`
+- [x] Configure Edge caching for `/bang-gia` SSR (stale-while-revalidate 10s)
 - [ ] Implement canonical tags: tag pages → parent category canonical URL
 - [ ] Unit-test `HreflangTags` RSC for all route patterns; post-launch GSC hreflang validation
 - [ ] Submit sitemap to Google Search Console and Bing Webmaster Tools
