@@ -27,20 +27,24 @@ interface CategoryDoc {
 }
 
 export default async function HomePage() {
-  await connectDB();
-
-  const [rawArticles, rawCategories] = await Promise.all([
-    Article.find({ status: "published" })
-      .sort({ publishedAt: -1 })
-      .limit(10)
-      .select("title slug excerpt publishedAt featuredImageUrl featuredImageAlt categorySlug")
-      .lean(),
-    Category.find().select("slug name").lean(),
-  ]);
-
-  // Safe RSC serialization: eliminates ObjectId/Date BSON types in one shot
-  const articles: ArticleDoc[] = JSON.parse(JSON.stringify(rawArticles));
-  const categories: CategoryDoc[] = JSON.parse(JSON.stringify(rawCategories));
+  let articles: ArticleDoc[] = [];
+  let categories: CategoryDoc[] = [];
+  try {
+    await connectDB();
+    const [rawArticles, rawCategories] = await Promise.all([
+      Article.find({ status: "published" })
+        .sort({ publishedAt: -1 })
+        .limit(10)
+        .select("title slug excerpt publishedAt featuredImageUrl featuredImageAlt categorySlug")
+        .lean(),
+      Category.find().select("slug name").lean(),
+    ]);
+    // Safe RSC serialization: eliminates ObjectId/Date BSON types in one shot
+    articles = JSON.parse(JSON.stringify(rawArticles));
+    categories = JSON.parse(JSON.stringify(rawCategories));
+  } catch {
+    // DB unavailable — render empty state (ISR will populate on first real request)
+  }
 
   const categoryNameMap = Object.fromEntries(categories.map((c) => [c.slug, c.name]));
   const enriched = articles.map((a) => ({

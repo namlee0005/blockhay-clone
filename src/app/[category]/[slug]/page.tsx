@@ -41,11 +41,16 @@ interface ArticleDoc {
 // until a slug field is added to IUser and a proper lookup is wired up
 
 export async function generateStaticParams() {
-  await connectDB();
-  const articles = await ArticleModel.find({ status: "published" })
-    .select("slug categorySlug")
-    .lean<{ slug: string; categorySlug: string }[]>();
-  return articles.map(({ slug, categorySlug }) => ({ slug, category: categorySlug }));
+  try {
+    await connectDB();
+    const articles = await ArticleModel.find({ status: "published" })
+      .select("slug categorySlug")
+      .lean<{ slug: string; categorySlug: string }[]>();
+    return articles.map(({ slug, categorySlug }) => ({ slug, category: categorySlug }));
+  } catch {
+    // DB unavailable at build time — pages will be generated on first request
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {

@@ -1,11 +1,5 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI!;
-
-if (!MONGODB_URI) {
-  throw new Error("Missing MONGODB_URI environment variable");
-}
-
 // Module-level cache survives hot-reloads in dev and connection reuse in serverless
 interface MongooseCache {
   conn: typeof mongoose | null;
@@ -22,6 +16,11 @@ const cache: MongooseCache = global.__mongooseCache ?? { conn: null, promise: nu
 global.__mongooseCache = cache;
 
 export async function connectDB(): Promise<typeof mongoose> {
+  const MONGODB_URI = process.env.MONGODB_URI;
+  if (!MONGODB_URI) {
+    throw new Error("Missing MONGODB_URI environment variable");
+  }
+
   if (cache.conn) return cache.conn;
 
   if (!cache.promise) {

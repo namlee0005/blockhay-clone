@@ -39,9 +39,14 @@ interface CategoryDoc {
 }
 
 export async function generateStaticParams() {
-  await connectDB();
-  const cats = await Category.find().select("slug").lean<{ slug: string }[]>();
-  return cats.map(({ slug }) => ({ category: slug }));
+  try {
+    await connectDB();
+    const cats = await Category.find().select("slug").lean<{ slug: string }[]>();
+    return cats.map(({ slug }) => ({ category: slug }));
+  } catch {
+    // DB unavailable at build time — pages will be generated on first request
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {

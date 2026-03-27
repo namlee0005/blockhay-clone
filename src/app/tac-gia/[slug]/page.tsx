@@ -34,9 +34,14 @@ interface ArticleRow {
 }
 
 export async function generateStaticParams() {
-  await connectDB();
-  const authors = await Author.find().select("slug").lean<{ slug: string }[]>();
-  return authors.map(({ slug }) => ({ slug }));
+  try {
+    await connectDB();
+    const authors = await Author.find().select("slug").lean<{ slug: string }[]>();
+    return authors.map(({ slug }) => ({ slug }));
+  } catch {
+    // DB unavailable at build time — pages will be generated on first request
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {

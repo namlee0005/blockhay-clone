@@ -6,17 +6,22 @@ import { Category } from "@/models/Category";
 const BASE = "https://blockhay.com";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  await connectDB();
-
-  const [articles, categories] = await Promise.all([
-    Article.find()
-      .sort({ publishedAt: -1 })
-      .select("slug categorySlug publishedAt updatedAt")
-      .lean<{ slug: string; categorySlug: string; publishedAt: Date; updatedAt: Date }[]>(),
-    Category.find()
-      .select("slug updatedAt")
-      .lean<{ slug: string; updatedAt: Date }[]>(),
-  ]);
+  let articles: { slug: string; categorySlug: string; publishedAt: Date; updatedAt: Date }[] = [];
+  let categories: { slug: string; updatedAt: Date }[] = [];
+  try {
+    await connectDB();
+    [articles, categories] = await Promise.all([
+      Article.find()
+        .sort({ publishedAt: -1 })
+        .select("slug categorySlug publishedAt updatedAt")
+        .lean<{ slug: string; categorySlug: string; publishedAt: Date; updatedAt: Date }[]>(),
+      Category.find()
+        .select("slug updatedAt")
+        .lean<{ slug: string; updatedAt: Date }[]>(),
+    ]);
+  } catch {
+    // DB unavailable at build time — return static entries only
+  }
 
   const articleEntries: MetadataRoute.Sitemap = articles.map((a) => ({
     url: `${BASE}/${a.categorySlug}/${a.slug}`,

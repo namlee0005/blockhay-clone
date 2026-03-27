@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/db";
-import { Article } from "@/models/Article";
+import { Article, IArticleSeo, ArticleStatus, SchemaType } from "@/models/Article";
 import { Category } from "@/models/Category";
 import DOMPurify from "isomorphic-dompurify";
 
@@ -77,17 +77,21 @@ export async function POST(req: NextRequest) {
 
   try {
     const article = await Article.create({
-      title, slug, excerpt, body: sanitizedBody,
+      title: String(title),
+      slug: String(slug),
+      excerpt: String(excerpt),
+      body: sanitizedBody,
       category: cat._id,
-      categorySlug,
-      author: (session.user as { id?: string }).id ?? cat._id, // fallback until proper user ref
+      categorySlug: String(categorySlug),
+      author: (session.user as { id?: string }).id ?? cat._id,
       authorSlug: session.user.email?.split("@")[0] ?? "editor",
-      tags: Array.isArray(tags) ? tags : [],
-      featuredImageUrl, featuredImageAlt,
-      schemaType: schemaType ?? "NewsArticle",
+      tags: Array.isArray(tags) ? (tags as string[]) : [],
+      featuredImageUrl: String(featuredImageUrl),
+      featuredImageAlt: String(featuredImageAlt),
+      schemaType: (schemaType as SchemaType | undefined) ?? "NewsArticle",
       sponsored: Boolean(sponsored),
-      status: status ?? "draft",
-      seo: seo ?? {},
+      status: (status as ArticleStatus | undefined) ?? "draft",
+      seo: (seo as IArticleSeo | undefined) ?? {},
       publishedAt: status === "published"
         ? (publishedAt ? new Date(String(publishedAt)) : new Date())
         : undefined,

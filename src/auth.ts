@@ -17,12 +17,6 @@ declare module "next-auth" {
   }
 }
 
-declare module "next-auth/jwt" {
-  interface JWT {
-    role?: UserRole;
-  }
-}
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
@@ -63,11 +57,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     jwt({ token, user }) {
       // Persist role into the JWT on first sign-in
-      if (user?.role) token.role = user.role;
+      if (user?.role) (token as Record<string, unknown>).role = user.role;
       return token;
     },
     session({ session, token }) {
-      if (token.role) session.user.role = token.role;
+      const role = (token as Record<string, unknown>).role as UserRole | undefined;
+      if (role) session.user.role = role;
       return session;
     },
   },
