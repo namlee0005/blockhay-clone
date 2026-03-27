@@ -7,12 +7,12 @@ import dynamic from "next/dynamic";
 const PriceTicker = dynamic(() => import("./PriceTicker"), { ssr: false });
 
 const NAV_LINKS = [
-  { href: "/tin-tuc", label: "Tin tức" },
-  { href: "/phan-tich", label: "Phân tích" },
-  { href: "/dau-tu", label: "Đầu tư" },
-  { href: "/kien-thuc-101", label: "Kiến thức" },
-  { href: "/su-kien", label: "Sự kiện" },
-  { href: "/bang-gia", label: "Bảng giá" },
+  { href: "/news", label: "News" },
+  { href: "/markets", label: "Markets" },
+  { href: "/web3-defi", label: "Web3 & DeFi" },
+  { href: "/tutorials", label: "Tutorials" },
+  { href: "/reviews", label: "Reviews" },
+  { href: "/bang-gia", label: "Prices" },
 ];
 
 export default function SiteHeader() {
