@@ -9,12 +9,17 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@meilisearch/instant-meilisearch": "^0.30.0",
+    "@portabletext/react": "^6.0.3",
     "@sanity/image-url": "^2.0.3",
     "@sanity/vision": "^5.18.0",
+    "meilisearch": "^0.56.0",
     "next": "16.2.1",
+    "next-intl": "^4.8.3",
     "next-sanity": "^12.1.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-instantsearch": "^7.28.1",
     "sanity": "^5.18.0"
   },
   "devDependencies": {

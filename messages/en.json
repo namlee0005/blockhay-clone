@@ -1,0 +1,28 @@
+{
+  "nav": {
+    "home": "Home",
+    "news": "News",
+    "analysis": "Analysis",
+    "investment": "Investment",
+    "education": "Education",
+    "events": "Events",
+    "prices": "Prices",
+    "search": "Search"
+  },
+  "article": {
+    "by": "By",
+    "updatedAt": "Updated",
+    "sponsored": "Sponsored content",
+    "tags": "Topics"
+  },
+  "prices": {
+    "title": "Crypto Prices",
+    "subtitle": "Updated every 30s · Source: CoinGecko",
+    "error": "Unable to load price data. Please try again later."
+  },
+  "search": {
+    "placeholder": "Search articles...",
+    "noResults": "No results found",
+    "results": "results"
+  }
+}

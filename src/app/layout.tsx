@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import SiteHeader from "@/components/SiteHeader";
+import SiteFooter from "@/components/SiteFooter";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -18,29 +20,31 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://blockhay.com"),
   alternates: {
     canonical: "/",
-    languages: {
-      vi: "/",
-      en: "/en",
-    },
+    languages: { vi: "/", en: "/en" },
   },
-  openGraph: {
-    siteName: "Blockhay",
-    locale: "vi_VN",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-  },
+  openGraph: { siteName: "Blockhay", locale: "vi_VN", type: "website" },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="vi" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <head>
+        {/* Preconnect to third-party origins — improves LCP */}
+        <link rel="preconnect" href="https://api.coingecko.com" />
+        <link rel="preconnect" href="https://cdn.sanity.io" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://api.coingecko.com" />
+      </head>
+      <body className="min-h-full flex flex-col bg-[var(--color-background)] text-[var(--color-foreground)]">
+        <SiteHeader />
+        <main id="main-content" className="flex-1">
+          {children}
+        </main>
+        <SiteFooter />
+      </body>
     </html>
   );
 }

@@ -1,26 +1,56 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* ── Vietnamese editorial theme tokens ────────────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Brand */
+  --color-brand:        #f97316; /* orange-500 — primary accent  */
+  --color-brand-dark:   #ea6e00;
+  --color-brand-light:  #fed7aa; /* orange-200                    */
+
+  /* Surface */
+  --color-surface:      #ffffff;
+  --color-surface-2:    #f8fafc; /* slate-50                      */
+  --color-border:       #e2e8f0; /* slate-200                     */
+
+  /* Text */
+  --color-text:         #0f172a; /* slate-900                     */
+  --color-text-muted:   #64748b; /* slate-500                     */
+  --color-text-subtle:  #94a3b8; /* slate-400                     */
+
+  /* Typography */
+  --font-sans:          var(--font-inter);
+
+  /* Radius */
+  --radius-card:        0.75rem;
+
+  /* Compat */
+  --color-background:   var(--color-surface);
+  --color-foreground:   var(--color-text);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  @theme inline {
+    --color-surface:    #0f172a;
+    --color-surface-2:  #1e293b;
+    --color-border:     #334155;
+    --color-text:       #f1f5f9;
+    --color-text-muted: #94a3b8;
+    --color-background: #0f172a;
+    --color-foreground: #f1f5f9;
   }
 }
 
+/* ── Global resets ───────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  line-height: 1.6;
 }
+
+/* sponsored outbound link style */
+.article-body a[rel~="nofollow"] { text-decoration-style: dashed; }

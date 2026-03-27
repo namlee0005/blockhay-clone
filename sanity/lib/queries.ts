@@ -32,3 +32,31 @@ export const allCategorySlugsQuery = groq`*[_type == "category"] {
   "slug": slug.current,
   _updatedAt
 }`;
+
+export const categoryPageQuery = groq`{
+  "category": *[_type == "category" && slug.current == $slug][0] {
+    _id, title, slug, description, _updatedAt
+  },
+  "articles": *[_type == "article" && category->slug.current == $slug] | order(publishedAt desc) [$from..$to] {
+    _id, title, slug, excerpt, publishedAt,
+    featuredImage { asset, alt },
+    author->{ name, slug }
+  },
+  "total": count(*[_type == "article" && category->slug.current == $slug])
+}`;
+
+export const authorPageQuery = groq`{
+  "author": *[_type == "author" && slug.current == $slug][0] {
+    _id, name, slug, avatar { asset, alt }, bio, socialLinks
+  },
+  "articles": *[_type == "article" && author->slug.current == $slug] | order(publishedAt desc) [0..11] {
+    _id, title, slug, excerpt, publishedAt,
+    featuredImage { asset, alt },
+    category->{ title, slug }
+  }
+}`;
+
+export const allAuthorSlugsQuery = groq`*[_type == "author"] {
+  "slug": slug.current,
+  _updatedAt
+}`;

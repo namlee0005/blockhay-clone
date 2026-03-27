@@ -1,0 +1,28 @@
+{
+  "nav": {
+    "home": "Trang chủ",
+    "news": "Tin tức",
+    "analysis": "Phân tích",
+    "investment": "Đầu tư",
+    "education": "Kiến thức",
+    "events": "Sự kiện",
+    "prices": "Bảng giá",
+    "search": "Tìm kiếm"
+  },
+  "article": {
+    "by": "Bởi",
+    "updatedAt": "Cập nhật",
+    "sponsored": "Nội dung tài trợ",
+    "tags": "Chủ đề"
+  },
+  "prices": {
+    "title": "Bảng giá coin",
+    "subtitle": "Cập nhật mỗi 30 giây · Nguồn: CoinGecko",
+    "error": "Không thể tải dữ liệu giá. Vui lòng thử lại sau."
+  },
+  "search": {
+    "placeholder": "Tìm kiếm bài viết...",
+    "noResults": "Không tìm thấy kết quả",
+    "results": "kết quả"
+  }
+}
