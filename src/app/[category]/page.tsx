@@ -3,9 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
 import type { Metadata } from "next";
-import { sanityClient } from "@sanity/lib/client";
-import { categoryPageQuery, allCategorySlugsQuery } from "@sanity/lib/queries";
-import { urlFor } from "@sanity/lib/image";
+import { connectDB } from "@/lib/mongodb";
+import { Article } from "@/models/Article";
+import { Category } from "@/models/Category";
 
 export const revalidate = 300;
 
@@ -16,31 +16,39 @@ interface Params {
   searchParams: Promise<{ page?: string }>;
 }
 
-interface CategoryData {
-  category: { _id: string; title: string; slug: { current: string }; description?: string; _updatedAt: string } | null;
-  articles: {
-    _id: string; title: string;
-    slug: { current: string }; excerpt: string; publishedAt: string;
-    featuredImage: { asset: object; alt: string };
-    author: { name: string; slug: { current: string } };
-  }[];
-  total: number;
+interface ArticleRow {
+  _id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  publishedAt: Date;
+  featuredImageUrl: string;
+  featuredImageAlt: string;
+  authorSlug: string;
+}
+
+interface CategoryRow {
+  _id: string;
+  title: string;
+  slug: string;
+  description?: string;
+  updatedAt: Date;
 }
 
 export async function generateStaticParams() {
-  const cats: { slug: string }[] = await sanityClient.fetch(allCategorySlugsQuery);
+  await connectDB();
+  const cats = await Category.find().select("slug").lean<{ slug: string }[]>();
   return cats.map(({ slug }) => ({ category: slug }));
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  await connectDB();
   const { category } = await params;
-  const data: CategoryData = await sanityClient.fetch(categoryPageQuery, {
-    slug: category, from: 0, to: PAGE_SIZE - 1,
-  });
-  if (!data.category) return {};
+  const cat = await Category.findOne({ slug: category }).lean<CategoryRow>();
+  if (!cat) return {};
   return {
-    title: data.category.title,
-    description: data.category.description ?? `Tin tức và bài viết về ${data.category.title}`,
+    title: cat.title,
+    description: cat.description ?? `Tin tức và bài viết về ${cat.title}`,
     alternates: {
       canonical: `/${category}`,
       languages: { vi: `/${category}`, en: `/en/${category}` },
@@ -49,18 +57,26 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 export default async function CategoryPage({ params, searchParams }: Params) {
+  await connectDB();
+
   const { category } = await params;
   const { page: pageStr } = await searchParams;
   const page = Math.max(1, parseInt(pageStr ?? "1", 10));
-  const from = (page - 1) * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
+  const skip = (page - 1) * PAGE_SIZE;
 
-  const data: CategoryData = await sanityClient.fetch(categoryPageQuery, {
-    slug: category, from, to,
-  });
-  if (!data.category) notFound();
+  const [cat, articles, total] = await Promise.all([
+    Category.findOne({ slug: category }).lean<CategoryRow>(),
+    Article.find({ categorySlug: category })
+      .sort({ publishedAt: -1 })
+      .skip(skip)
+      .limit(PAGE_SIZE)
+      .select("-body")
+      .lean<ArticleRow[]>(),
+    Article.countDocuments({ categorySlug: category }),
+  ]);
 
-  const { category: cat, articles, total } = data;
+  if (!cat) notFound();
+
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   const collectionPageJsonLd = {
@@ -96,21 +112,19 @@ export default async function CategoryPage({ params, searchParams }: Params) {
         </nav>
 
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{cat.title}</h1>
-        {cat.description && (
-          <p className="text-slate-500 mb-6">{cat.description}</p>
-        )}
+        {cat.description && <p className="text-slate-500 mb-6">{cat.description}</p>}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {articles.map((article) => (
             <Link
-              key={article._id}
-              href={`/${category}/${article.slug.current}`}
+              key={String(article._id)}
+              href={`/${category}/${article.slug}`}
               className="group flex flex-col"
             >
               <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-slate-100">
                 <Image
-                  src={urlFor(article.featuredImage.asset).width(600).height(338).url()}
-                  alt={article.featuredImage.alt}
+                  src={article.featuredImageUrl}
+                  alt={article.featuredImageAlt}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -121,19 +135,14 @@ export default async function CategoryPage({ params, searchParams }: Params) {
                   {article.title}
                 </h2>
                 <p className="mt-1 text-sm text-slate-500 line-clamp-2">{article.excerpt}</p>
-                <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
-                  <span>{article.author.name}</span>
-                  <span>·</span>
-                  <time dateTime={article.publishedAt}>
-                    {new Date(article.publishedAt).toLocaleDateString("vi-VN")}
-                  </time>
-                </div>
+                <time dateTime={article.publishedAt.toISOString()} className="mt-2 block text-xs text-slate-400">
+                  {new Date(article.publishedAt).toLocaleDateString("vi-VN")}
+                </time>
               </div>
             </Link>
           ))}
         </div>
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <nav aria-label="Phân trang" className="mt-10 flex justify-center gap-2">
             {page > 1 && (
@@ -144,9 +153,7 @@ export default async function CategoryPage({ params, searchParams }: Params) {
                 ← Trước
               </Link>
             )}
-            <span className="px-4 py-2 text-sm text-slate-500">
-              {page} / {totalPages}
-            </span>
+            <span className="px-4 py-2 text-sm text-slate-500">{page} / {totalPages}</span>
             {page < totalPages && (
               <Link
                 href={`/${category}?page=${page + 1}`}

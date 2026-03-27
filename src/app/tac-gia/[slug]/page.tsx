@@ -3,9 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
 import type { Metadata } from "next";
-import { sanityClient } from "@sanity/lib/client";
-import { authorPageQuery, allAuthorSlugsQuery } from "@sanity/lib/queries";
-import { urlFor } from "@sanity/lib/image";
+import { connectDB } from "@/lib/mongodb";
+import { Author } from "@/models/Author";
+import { Article } from "@/models/Article";
 
 export const revalidate = 300;
 
@@ -13,34 +13,40 @@ interface Params {
   params: Promise<{ slug: string }>;
 }
 
-interface AuthorData {
-  author: {
-    _id: string; name: string;
-    slug: { current: string };
-    avatar?: { asset: object; alt?: string };
-    bio?: string;
-    socialLinks?: string[];
-  } | null;
-  articles: {
-    _id: string; title: string;
-    slug: { current: string }; excerpt: string; publishedAt: string;
-    featuredImage: { asset: object; alt: string };
-    category: { title: string; slug: { current: string } };
-  }[];
+interface AuthorRow {
+  _id: string;
+  name: string;
+  slug: string;
+  avatarUrl?: string;
+  avatarAlt?: string;
+  bio?: string;
+  socialLinks: string[];
+}
+
+interface ArticleRow {
+  _id: string;
+  title: string;
+  slug: string;
+  publishedAt: Date;
+  featuredImageUrl: string;
+  featuredImageAlt: string;
+  categorySlug: string;
 }
 
 export async function generateStaticParams() {
-  const authors: { slug: string }[] = await sanityClient.fetch(allAuthorSlugsQuery);
+  await connectDB();
+  const authors = await Author.find().select("slug").lean<{ slug: string }[]>();
   return authors.map(({ slug }) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  await connectDB();
   const { slug } = await params;
-  const data: AuthorData = await sanityClient.fetch(authorPageQuery, { slug });
-  if (!data.author) return {};
+  const author = await Author.findOne({ slug }).lean<AuthorRow>();
+  if (!author) return {};
   return {
-    title: data.author.name,
-    description: data.author.bio ?? `Bài viết bởi ${data.author.name} trên Blockhay`,
+    title: author.name,
+    description: author.bio ?? `Bài viết bởi ${author.name} trên Blockhay`,
     alternates: {
       canonical: `/tac-gia/${slug}`,
       languages: { vi: `/tac-gia/${slug}`, en: `/en/tac-gia/${slug}` },
@@ -49,11 +55,19 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 export default async function AuthorPage({ params }: Params) {
+  await connectDB();
   const { slug } = await params;
-  const data: AuthorData = await sanityClient.fetch(authorPageQuery, { slug });
-  if (!data.author) notFound();
 
-  const { author, articles } = data;
+  const [author, articles] = await Promise.all([
+    Author.findOne({ slug }).lean<AuthorRow>(),
+    Article.find({ authorSlug: slug })
+      .sort({ publishedAt: -1 })
+      .limit(12)
+      .select("-body")
+      .lean<ArticleRow[]>(),
+  ]);
+
+  if (!author) notFound();
 
   const personJsonLd = {
     "@context": "https://schema.org",
@@ -62,9 +76,7 @@ export default async function AuthorPage({ params }: Params) {
     url: `https://blockhay.com/tac-gia/${slug}`,
     description: author.bio,
     sameAs: author.socialLinks ?? [],
-    ...(author.avatar && {
-      image: urlFor(author.avatar.asset).width(400).height(400).url(),
-    }),
+    ...(author.avatarUrl && { image: author.avatarUrl }),
     worksFor: {
       "@type": "Organization",
       name: "Blockhay",
@@ -81,13 +93,12 @@ export default async function AuthorPage({ params }: Params) {
       />
 
       <div className="max-w-5xl mx-auto px-4 py-10">
-        {/* Author card */}
         <div className="flex items-center gap-6 mb-10">
-          {author.avatar && (
+          {author.avatarUrl && (
             <div className="relative w-20 h-20 rounded-full overflow-hidden flex-shrink-0">
               <Image
-                src={urlFor(author.avatar.asset).width(160).height(160).url()}
-                alt={author.avatar.alt ?? author.name}
+                src={author.avatarUrl}
+                alt={author.avatarAlt ?? author.name}
                 fill
                 className="object-cover"
                 sizes="80px"
@@ -99,7 +110,7 @@ export default async function AuthorPage({ params }: Params) {
             {author.bio && (
               <p className="mt-1 text-slate-500 dark:text-slate-400 text-sm max-w-xl">{author.bio}</p>
             )}
-            {author.socialLinks && author.socialLinks.length > 0 && (
+            {author.socialLinks.length > 0 && (
               <div className="mt-2 flex gap-3">
                 {author.socialLinks.map((url) => (
                   <a
@@ -117,21 +128,20 @@ export default async function AuthorPage({ params }: Params) {
           </div>
         </div>
 
-        {/* Author articles */}
         <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-5">
           Bài viết của {author.name}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {articles.map((article) => (
             <Link
-              key={article._id}
-              href={`/${article.category.slug.current}/${article.slug.current}`}
+              key={String(article._id)}
+              href={`/${article.categorySlug}/${article.slug}`}
               className="group flex flex-col"
             >
               <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-slate-100">
                 <Image
-                  src={urlFor(article.featuredImage.asset).width(600).height(338).url()}
-                  alt={article.featuredImage.alt}
+                  src={article.featuredImageUrl}
+                  alt={article.featuredImageAlt}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -139,12 +149,12 @@ export default async function AuthorPage({ params }: Params) {
               </div>
               <div className="mt-3">
                 <span className="text-xs text-orange-500 uppercase font-medium">
-                  {article.category.title}
+                  {article.categorySlug}
                 </span>
                 <h3 className="mt-1 font-semibold leading-snug text-slate-900 dark:text-white group-hover:text-orange-500 transition-colors line-clamp-2">
                   {article.title}
                 </h3>
-                <time dateTime={article.publishedAt} className="mt-1 block text-xs text-slate-400">
+                <time dateTime={article.publishedAt.toISOString()} className="mt-1 block text-xs text-slate-400">
                   {new Date(article.publishedAt).toLocaleDateString("vi-VN")}
                 </time>
               </div>

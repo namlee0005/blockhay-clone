@@ -1,54 +1,43 @@
 import type { MetadataRoute } from "next";
-import { sanityClient } from "@sanity/lib/client";
-import {
-  allArticleSlugsQuery,
-  allCategorySlugsQuery,
-} from "@sanity/lib/queries";
+import { connectDB } from "@/lib/mongodb";
+import { Article } from "@/models/Article";
+import { Category } from "@/models/Category";
 
 const BASE = "https://blockhay.com";
 
-interface ArticleSlug {
-  slug: string;
-  category: string;
-  publishedAt: string;
-  _updatedAt: string;
-}
-
-interface CategorySlug {
-  slug: string;
-  _updatedAt: string;
-}
-
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [articles, categories]: [ArticleSlug[], CategorySlug[]] =
-    await Promise.all([
-      sanityClient.fetch(allArticleSlugsQuery),
-      sanityClient.fetch(allCategorySlugsQuery),
-    ]);
+  await connectDB();
+
+  const [articles, categories] = await Promise.all([
+    Article.find()
+      .sort({ publishedAt: -1 })
+      .select("slug categorySlug publishedAt updatedAt")
+      .lean<{ slug: string; categorySlug: string; publishedAt: Date; updatedAt: Date }[]>(),
+    Category.find()
+      .select("slug updatedAt")
+      .lean<{ slug: string; updatedAt: Date }[]>(),
+  ]);
 
   const articleEntries: MetadataRoute.Sitemap = articles.map((a) => ({
-    url: `${BASE}/${a.category}/${a.slug}`,
-    lastModified: new Date(a._updatedAt ?? a.publishedAt),
+    url: `${BASE}/${a.categorySlug}/${a.slug}`,
+    lastModified: a.updatedAt ?? a.publishedAt,
     changeFrequency: "weekly",
     priority: 0.8,
     alternates: {
       languages: {
-        vi: `${BASE}/${a.category}/${a.slug}`,
-        en: `${BASE}/en/${a.category}/${a.slug}`,
+        vi: `${BASE}/${a.categorySlug}/${a.slug}`,
+        en: `${BASE}/en/${a.categorySlug}/${a.slug}`,
       },
     },
   }));
 
   const categoryEntries: MetadataRoute.Sitemap = categories.map((c) => ({
     url: `${BASE}/${c.slug}`,
-    lastModified: new Date(c._updatedAt),
+    lastModified: c.updatedAt,
     changeFrequency: "daily",
     priority: 0.9,
     alternates: {
-      languages: {
-        vi: `${BASE}/${c.slug}`,
-        en: `${BASE}/en/${c.slug}`,
-      },
+      languages: { vi: `${BASE}/${c.slug}`, en: `${BASE}/en/${c.slug}` },
     },
   }));
 
@@ -65,9 +54,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: "always",
       priority: 0.7,
-      alternates: {
-        languages: { vi: `${BASE}/bang-gia`, en: `${BASE}/en/bang-gia` },
-      },
+      alternates: { languages: { vi: `${BASE}/bang-gia`, en: `${BASE}/en/bang-gia` } },
     },
     {
       url: `${BASE}/tim-kiem`,

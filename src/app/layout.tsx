@@ -34,7 +34,6 @@ export default function RootLayout({
       <head>
         {/* Preconnect to third-party origins — improves LCP */}
         <link rel="preconnect" href="https://api.coingecko.com" />
-        <link rel="preconnect" href="https://cdn.sanity.io" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://api.coingecko.com" />
       </head>

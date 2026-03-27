@@ -1,9 +1,10 @@
 import { ImageResponse } from "next/og";
-import { sanityClient } from "@sanity/lib/client";
-import { articleQuery } from "@sanity/lib/queries";
-import { urlFor } from "@sanity/lib/image";
+import { connectDB } from "@/lib/mongodb";
+import { Article } from "@/models/Article";
 
-export const runtime = "edge";
+// Edge runtime: Mongoose uses TCP which isn't available on the Edge runtime.
+// Use Node.js runtime for this route so Mongoose can connect.
+export const runtime = "nodejs";
 export const alt = "Blockhay article cover";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
@@ -14,11 +15,18 @@ interface Props {
 
 export default async function OGImage({ params }: Props) {
   const { category, slug } = await params;
-  const article = await sanityClient.fetch(articleQuery, { slug, category });
 
-  const bgUrl = article?.featuredImage
-    ? urlFor(article.featuredImage.asset).width(1200).height(630).url()
-    : null;
+  await connectDB();
+  const article = await Article.findOne({ slug, categorySlug: category })
+    .select("title featuredImageUrl featuredImageAlt categorySlug authorSlug publishedAt")
+    .lean<{
+      title: string;
+      featuredImageUrl: string;
+      featuredImageAlt: string;
+      categorySlug: string;
+      authorSlug: string;
+      publishedAt: Date;
+    }>();
 
   return new ImageResponse(
     (
@@ -35,10 +43,10 @@ export default async function OGImage({ params }: Props) {
         }}
       >
         {/* Background image */}
-        {bgUrl && (
+        {article?.featuredImageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={bgUrl}
+            src={article.featuredImageUrl}
             alt=""
             style={{
               position: "absolute",
@@ -70,12 +78,9 @@ export default async function OGImage({ params }: Props) {
             gap: 12,
           }}
         >
-          {/* Brand */}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ color: "#f97316", fontWeight: 800, fontSize: 22 }}>
-              Blockhay
-            </span>
-            {article?.category?.title && (
+            <span style={{ color: "#f97316", fontWeight: 800, fontSize: 22 }}>Blockhay</span>
+            {article?.categorySlug && (
               <span
                 style={{
                   backgroundColor: "#f97316",
@@ -88,12 +93,11 @@ export default async function OGImage({ params }: Props) {
                   letterSpacing: "0.05em",
                 }}
               >
-                {article.category.title}
+                {article.categorySlug}
               </span>
             )}
           </div>
 
-          {/* Title */}
           <div
             style={{
               color: "white",
@@ -106,16 +110,11 @@ export default async function OGImage({ params }: Props) {
             {article?.title ?? "Blockhay — Tin Tức Crypto & Blockchain"}
           </div>
 
-          {/* Author + date */}
-          {article?.author && (
+          {article?.publishedAt && (
             <div style={{ color: "#94a3b8", fontSize: 18 }}>
-              {article.author.name}
-              {article.publishedAt && (
-                <>
-                  {" · "}
-                  {new Date(article.publishedAt).toLocaleDateString("vi-VN")}
-                </>
-              )}
+              {article.authorSlug}
+              {" · "}
+              {new Date(article.publishedAt).toLocaleDateString("vi-VN")}
             </div>
           )}
         </div>
