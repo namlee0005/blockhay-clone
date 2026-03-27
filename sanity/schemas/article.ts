@@ -24,9 +24,7 @@ export const article = defineType({
       type: "text",
       rows: 3,
       validation: (Rule) =>
-        Rule.required().min(150).max(160).error(
-          "Excerpt phải từ 150–160 ký tự để tối ưu SEO"
-        ),
+        Rule.required(),
     }),
     defineField({
       name: "featuredImage",
@@ -39,7 +37,6 @@ export const article = defineType({
           name: "alt",
           type: "string",
           title: "Alt text",
-          validation: (Rule) => Rule.required(),
         }),
       ],
     }),
