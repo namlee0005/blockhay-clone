@@ -54,12 +54,12 @@
 - [x] **NextAuth.js v5:** Configure Credentials provider; JWT sessions; `admin` / `editor` roles (`auth.ts`)
 - [x] **Auth middleware:** Protect all `/admin/*`; redirect unauthenticated → `/admin/login` (`middleware.ts`)
 - [x] **Admin dashboard** (`/admin`): published/draft/archived counts, recent articles list, quick-publish link
-- [ ] **Article list** (`/admin/articles`): paginated table with status filter + search
-- [ ] **Article editor** (`/admin/articles/new` + `/edit`):
-  - [ ] TipTap v2: `StarterKit`, `Image`, `Link`, `CodeBlockLowlight`, `Youtube`, `Placeholder`
-  - [ ] SEO fields panel: `metaTitle`, `metaDesc`, `canonicalUrl`
-  - [ ] Publish / Save Draft / Archive controls
-  - [ ] `DOMPurify` sanitization on save (XSS prevention)
+- [x] **Article list** (`/admin/articles`): paginated table with status filter + search + delete
+- [x] **Article editor** (`/admin/articles/new` + `/edit`):
+  - [x] TipTap v2: `StarterKit`, `Image`, `Link`, `Placeholder`
+  - [x] SEO fields panel: `metaTitle`, `metaDesc`, `canonicalUrl`
+  - [x] Publish / Save Draft / Archive controls
+  - [x] `isomorphic-dompurify` sanitization on save (XSS prevention)
 - [ ] **Image upload** (`/api/admin/upload`): upload to Vercel Blob or S3; return URL for TipTap
 - [ ] **Category CRUD** (`/admin/categories`): create, rename, reorder, delete with referential check
 - [ ] **User management** (`/admin/users`, admin-only): invite editor, reset password, deactivate
