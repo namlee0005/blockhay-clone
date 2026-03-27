@@ -17,7 +17,7 @@ const NAV_LINKS = [
 
 export default function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-800">
+    <header className="sticky top-0 z-50 bg-white/90 dark:bg-slate-950/90 backdrop-blur border-b border-slate-200 dark:border-slate-800">
       {/* Price ticker strip */}
       <div className="bg-slate-900 dark:bg-slate-950 text-xs text-slate-300 h-7 overflow-hidden">
         <PriceTicker />
