@@ -30,14 +30,14 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="vi" className={`${inter.variable} h-full antialiased`}>
+    <html lang="vi" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         {/* Preconnect to third-party origins — improves LCP */}
         <link rel="preconnect" href="https://api.coingecko.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://api.coingecko.com" />
       </head>
-      <body className="min-h-full flex flex-col bg-[var(--color-background)] text-[var(--color-foreground)]">
+      <body className="min-h-full flex flex-col bg-[var(--color-background)] text-[var(--color-foreground)]" suppressHydrationWarning>
         <SiteHeader />
         <main id="main-content" className="flex-1">
           {children}
