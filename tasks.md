@@ -48,12 +48,12 @@
 
 ## Phase 4: MongoDB Backend, Admin Panel & Auth
 
-- [ ] **Database:** Connect MongoDB Atlas; create `lib/db.ts` singleton with Mongoose connection pooling
-- [ ] **Schemas:** Define `Article`, `Category`, `User` Mongoose schemas per spec
-- [ ] **Seed categories:** Insert `news`, `markets`, `web3-defi`, `tutorials`, `reviews` documents
-- [ ] **NextAuth.js v5:** Configure Credentials + Google OAuth; JWT sessions; `admin` / `editor` roles
-- [ ] **Auth middleware:** Protect all `/admin/*` and `/api/admin/*`; redirect unauthenticated → `/admin/login`
-- [ ] **Admin dashboard** (`/admin`): recent articles, draft count, quick-publish shortcuts
+- [x] **Database:** Connect MongoDB Atlas; create `lib/db.ts` singleton with Mongoose connection pooling
+- [x] **Schemas:** Define `Article`, `Category`, `User` Mongoose schemas per spec
+- [x] **Seed categories:** Insert `news`, `markets`, `web3-defi`, `tutorials`, `reviews` documents
+- [x] **NextAuth.js v5:** Configure Credentials provider; JWT sessions; `admin` / `editor` roles (`auth.ts`)
+- [x] **Auth middleware:** Protect all `/admin/*`; redirect unauthenticated → `/admin/login` (`middleware.ts`)
+- [x] **Admin dashboard** (`/admin`): published/draft/archived counts, recent articles list, quick-publish link
 - [ ] **Article list** (`/admin/articles`): paginated table with status filter + search
 - [ ] **Article editor** (`/admin/articles/new` + `/edit`):
   - [ ] TipTap v2: `StarterKit`, `Image`, `Link`, `CodeBlockLowlight`, `Youtube`, `Placeholder`
