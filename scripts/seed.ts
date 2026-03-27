@@ -1,7 +1,4 @@
-import os
-
-# Create sample seed script to populate Sanity with dummy data
-seed_script = """import { createClient } from '@sanity/client'
+import { createClient } from '@sanity/client'
 import 'dotenv/config'
 
 const client = createClient({
@@ -16,6 +13,3 @@ async function seed() {
   console.log("Not implemented yet - manual entry is better for first test")
 }
 seed()
-"""
-with open('scripts/seed.ts', 'w') as f:
-    f.write(seed_script)
