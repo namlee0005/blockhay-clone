@@ -8,8 +8,8 @@ const CSP = [
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://placeholder-ad-network.example.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
-  "img-src 'self' data: blob: https://cdn.sanity.io https://assets.coingecko.com",
-  "connect-src 'self' https://api.coingecko.com https://*.sanity.io",
+  "img-src * data: blob:",
+  "connect-src 'self' https://api.coingecko.com",
   "frame-ancestors 'none'",
 ].join("; ");
 
@@ -17,7 +17,10 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["192.168.1.56", "localhost"],
   images: {
     remotePatterns: [
-            { protocol: "https", hostname: "cdn.sanity.io" },
+      { protocol: "https", hostname: "**" },
+      { protocol: "http", hostname: "**" }
+    ],
+  },
       { protocol: "https", hostname: "assets.coingecko.com" },
       { protocol: "https", hostname: "www.google.com" },
       { protocol: "https", hostname: "images.unsplash.com" },
