@@ -2,10 +2,10 @@
 
 ## Phase 1: Foundation & Core Infrastructure
 
-- [x] Scaffold Next.js 15 App Router project with TypeScript strict mode
+- [ ] Scaffold Next.js 15 App Router project with TypeScript strict mode
 - [ ] Configure Tailwind CSS v4 with Vietnamese editorial theme tokens
-- [x] Set up Sanity.io with Article, Category, Author schemas (`sponsored`, `schemaType` fields included)
-- [x] Implement `next/font` with Vietnamese-only Unicode subset
+- [ ] Set up Sanity.io with Article, Category, Author schemas (`sponsored`, `schemaType` fields included)
+- [ ] Implement `next/font` with Vietnamese-only Unicode subset
 - [ ] Create base layout: `<html lang="vi">`, `<header>`, `<main>`, `<footer>`, `<nav aria-label>`
 - [ ] Build global price ticker React island (CoinGecko, 30s polling, no SSR hydration mismatch)
 - [ ] Configure `next-seo` defaults; inject `Organization` + `WebSite` + `SearchAction` JSON-LD in root layout
