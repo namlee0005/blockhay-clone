@@ -1,17 +1,21 @@
 # Blockhay Clone — Implementation Phases
 
+> **Codebase Status (2026-03-27):** No Next.js project has been scaffolded yet. The `src/` directory contains only MAS Python/TypeScript files unrelated to this project. All tasks below are pending. Begin with Phase 1.
+
+---
+
 ## Phase 1: Foundation & Core Infrastructure
 
 - [ ] Scaffold Next.js 15 App Router project with TypeScript strict mode
 - [ ] Configure Tailwind CSS v4 with editorial theme tokens
-- [x] ~~Set up Sanity.io project with Article, Category, Author schemas~~ → **Replaced by Phase 4 MongoDB setup**
+- [ ] ~~Set up Sanity.io project with Article, Category, Author schemas~~ → **Replaced by Phase 4 MongoDB setup**
 - [ ] Implement `next/font` with optimized subset
 - [ ] Create base layout: `<html lang="en">`, `<header>`, `<main>`, `<footer>`, `<nav aria-label>`
 - [ ] Build global price ticker React island (CoinGecko, 30s polling, no hydration mismatch)
 - [ ] Configure `next-seo` defaults: site name, OG base image, Twitter card defaults
 - [ ] Add `Organization` + `WebSite` + `SearchAction` JSON-LD to root layout
 - [ ] Scaffold `/robots.txt` and base `/sitemap.xml` via `app/sitemap.ts`
-- [x] ~~Deploy to Vercel; confirm Sanity webhook triggers ISR revalidation~~ → **On-demand ISR via `/api/revalidate` (Phase 4)**
+- [ ] Deploy skeleton to Vercel; confirm CI pipeline and env vars set
 
 ## Phase 2: Content Pages & SEO Implementation
 
@@ -25,9 +29,10 @@
 - [ ] Build Category listing pages for: `news`, `markets`, `web3-defi`, `tutorials`, `reviews`
 - [ ] Build Author profile page (`/author/[slug]`): `Person` JSON-LD with `sameAs`
 - [ ] Build Price page (`/prices`, SSR): `Dataset` JSON-LD, sortable CoinGecko table
-- [x] ~~Implement Meilisearch indexing via Sanity webhook~~ → **MongoDB change stream sync (Phase 4)**
+- [ ] ~~Implement Meilisearch indexing via Sanity webhook~~ → **MongoDB change stream sync (Phase 4)**
 - [ ] Build Search UI (`/search`, CSR): Meilisearch InstantSearch
 - [ ] Split sitemap: `articles.xml` (ISR 1h), `categories.xml`, `authors.xml`
+- [ ] Build `HreflangTags` RSC: emits `hreflang="en"` + `hreflang="x-default"` per page
 - [ ] Add `FAQPage` JSON-LD for `/tutorials/` articles
 - [ ] Enforce single `<h1>` rule via ESLint plugin; audit all page types
 - [ ] Add Lighthouse CI gate: fail build if Performance < 90 or SEO < 100
@@ -35,7 +40,7 @@
 ## Phase 3: Performance, Monetization & Launch Hardening
 
 - [ ] Implement skeleton loaders for all CSR/dynamic components (CLS elimination)
-- [x] ~~Add `<link rel="preconnect">` for Sanity CDN~~ → **Preconnect for Vercel Blob / S3 CDN and CoinGecko**
+- [ ] Add `<link rel="preconnect">` for Vercel Blob / S3 CDN, CoinGecko, and font origins
 - [ ] Wrap ad slots in `next/script strategy="lazyOnload"` + `Suspense`
 - [ ] Set up Edge caching for `/prices` SSR route (stale-while-revalidate 10s)
 - [ ] Implement canonical tag logic: tag pages → parent category canonical URL
@@ -48,18 +53,18 @@
 
 ## Phase 4: MongoDB Backend, Admin Panel & Auth
 
-- [x] **Database:** Connect MongoDB Atlas; create `lib/db.ts` singleton with Mongoose connection pooling
-- [x] **Schemas:** Define `Article`, `Category`, `User` Mongoose schemas per spec
-- [x] **Seed categories:** Insert `news`, `markets`, `web3-defi`, `tutorials`, `reviews` documents
-- [x] **NextAuth.js v5:** Configure Credentials provider; JWT sessions; `admin` / `editor` roles (`auth.ts`)
-- [x] **Auth middleware:** Protect all `/admin/*`; redirect unauthenticated → `/admin/login` (`middleware.ts`)
-- [x] **Admin dashboard** (`/admin`): published/draft/archived counts, recent articles list, quick-publish link
-- [x] **Article list** (`/admin/articles`): paginated table with status filter + search + delete
-- [x] **Article editor** (`/admin/articles/new` + `/edit`):
-  - [x] TipTap v2: `StarterKit`, `Image`, `Link`, `Placeholder`
-  - [x] SEO fields panel: `metaTitle`, `metaDesc`, `canonicalUrl`
-  - [x] Publish / Save Draft / Archive controls
-  - [x] `isomorphic-dompurify` sanitization on save (XSS prevention)
+- [ ] **Database:** Connect MongoDB Atlas; create `lib/db.ts` singleton with Mongoose connection pooling
+- [ ] **Schemas:** Define `Article`, `Category`, `User` Mongoose schemas per spec
+- [ ] **Seed categories:** Insert `news`, `markets`, `web3-defi`, `tutorials`, `reviews` documents
+- [ ] **NextAuth.js v5:** Configure Credentials + Google OAuth; JWT sessions; `admin` / `editor` roles
+- [ ] **Auth middleware:** Protect all `/admin/*` and `/api/admin/*`; redirect unauthenticated → `/admin/login`
+- [ ] **Admin dashboard** (`/admin`): recent articles, draft count, quick-publish shortcuts
+- [ ] **Article list** (`/admin/articles`): paginated table with status filter + search
+- [ ] **Article editor** (`/admin/articles/new` + `/edit`):
+  - [ ] TipTap v2: `StarterKit`, `Image`, `Link`, `CodeBlockLowlight`, `Youtube`, `Placeholder`
+  - [ ] SEO fields panel: `metaTitle`, `metaDesc`, `canonicalUrl`
+  - [ ] Publish / Save Draft / Archive controls
+  - [ ] `DOMPurify` sanitization on save (XSS prevention)
 - [ ] **Image upload** (`/api/admin/upload`): upload to Vercel Blob or S3; return URL for TipTap
 - [ ] **Category CRUD** (`/admin/categories`): create, rename, reorder, delete with referential check
 - [ ] **User management** (`/admin/users`, admin-only): invite editor, reset password, deactivate
