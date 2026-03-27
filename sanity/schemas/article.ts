@@ -9,29 +9,28 @@ export const article = defineType({
       name: "title",
       title: "Tiêu đề",
       type: "string",
-      validation: (Rule) => Rule.required(),
+      
     }),
     defineField({
       name: "slug",
       title: "Slug",
       type: "slug",
       options: { source: "title", maxLength: 96 },
-      validation: (Rule) => Rule.required(),
+      
     }),
     defineField({
       name: "excerpt",
       title: "Tóm tắt (meta description)",
       type: "text",
       rows: 3,
-      validation: (Rule) =>
-        Rule.required(),
+      
     }),
     defineField({
       name: "featuredImage",
       title: "Ảnh đại diện",
       type: "image",
       options: { hotspot: true },
-      validation: (Rule) => Rule.required(),
+      
       fields: [
         defineField({
           name: "alt",
@@ -45,14 +44,14 @@ export const article = defineType({
       title: "Danh mục",
       type: "reference",
       to: [{ type: "category" }],
-      validation: (Rule) => Rule.required(),
+      
     }),
     defineField({
       name: "author",
       title: "Tác giả",
       type: "reference",
       to: [{ type: "author" }],
-      validation: (Rule) => Rule.required(),
+      
     }),
     defineField({
       name: "tags",
@@ -65,7 +64,7 @@ export const article = defineType({
       name: "publishedAt",
       title: "Ngày xuất bản",
       type: "datetime",
-      validation: (Rule) => Rule.required(),
+      
     }),
     defineField({
       name: "schemaType",
@@ -80,7 +79,7 @@ export const article = defineType({
         layout: "radio",
       },
       initialValue: "NewsArticle",
-      validation: (Rule) => Rule.required(),
+      
     }),
     defineField({
       name: "sponsored",
