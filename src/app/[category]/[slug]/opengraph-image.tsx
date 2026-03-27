@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
-import { sanityClient } from "@/../../sanity/lib/client";
-import { articleQuery } from "@/../../sanity/lib/queries";
-import { urlFor } from "@/../../sanity/lib/image";
+import { sanityClient } from "@sanity/lib/client";
+import { articleQuery } from "@sanity/lib/queries";
+import { urlFor } from "@sanity/lib/image";
 
 export const runtime = "edge";
 export const alt = "Blockhay article cover";

@@ -2,9 +2,9 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Script from "next/script";
 import type { Metadata } from "next";
-import { sanityClient } from "@/../../sanity/lib/client";
-import { articleQuery, allArticleSlugsQuery } from "@/../../sanity/lib/queries";
-import { urlFor } from "@/../../sanity/lib/image";
+import { sanityClient } from "@sanity/lib/client";
+import { articleQuery, allArticleSlugsQuery } from "@sanity/lib/queries";
+import { urlFor } from "@sanity/lib/image";
 
 export const revalidate = 300;
 

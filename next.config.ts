@@ -14,6 +14,7 @@ const CSP = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["192.168.1.56", "localhost"],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "cdn.sanity.io" },

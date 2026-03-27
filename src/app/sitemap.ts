@@ -1,9 +1,9 @@
 import type { MetadataRoute } from "next";
-import { sanityClient } from "@/../../sanity/lib/client";
+import { sanityClient } from "@sanity/lib/client";
 import {
   allArticleSlugsQuery,
   allCategorySlugsQuery,
-} from "@/../../sanity/lib/queries";
+} from "@sanity/lib/queries";
 
 const BASE = "https://blockhay.com";
 

@@ -1,9 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
-import { sanityClient } from "@/../../sanity/lib/client";
-import { homePageQuery } from "@/../../sanity/lib/queries";
-import { urlFor } from "@/../../sanity/lib/image";
+import { sanityClient } from "@sanity/lib/client";
+import { homePageQuery } from "@sanity/lib/queries";
+import { urlFor } from "@sanity/lib/image";
 
 export const revalidate = 60;
 
