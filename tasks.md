@@ -15,7 +15,7 @@
 - [ ] Configure `next-seo` defaults: site name, OG base image, Twitter card defaults
 - [ ] Add `Organization` + `WebSite` + `SearchAction` JSON-LD to root layout
 - [x] Scaffold `/robots.txt` and `/sitemap.xml` — `app/robots.ts`, `app/sitemap.ts`
-- [ ] Deploy to Vercel; confirm CI pipeline and env vars set
+- [ ] Deploy to VPS; configure Nginx reverse proxy + Certbot SSL
 
 ## Phase 2: Content Pages & SEO Implementation
 
@@ -40,11 +40,11 @@
 ## Phase 3: Performance, Monetization & Launch Hardening
 
 - [x] Implement skeleton loaders — `components/ArticleSkeleton.tsx`
-- [ ] Add `<link rel="preconnect">` for Vercel Blob / S3 CDN, CoinGecko, and font origins
+- [ ] Add `<link rel="preconnect">` for CoinGecko and font origins
 - [ ] Wrap ad slots in `next/script strategy="lazyOnload"` + `Suspense`
-- [ ] Set up Edge caching for `/bang-gia` SSR route (stale-while-revalidate 10s)
+- [ ] Set up server-side response caching for `/bang-gia` SSR route
 - [ ] Implement canonical tag logic: tag pages → parent category canonical URL
-- [ ] Configure Vercel Analytics + Core Web Vitals alerting
+- [ ] Configure analytics (self-hosted Umami or lightweight script)
 - [ ] Submit sitemap to Google Search Console and Bing Webmaster Tools
 - [ ] Validate all JSON-LD via Google Rich Results Test for each page type
 - [ ] Load test `/bang-gia` SSR at 100 concurrent users; confirm TTFB < 500ms
@@ -65,10 +65,25 @@
   - [ ] SEO fields panel: `metaTitle`, `metaDesc`, `canonicalUrl`
   - [ ] Publish / Save Draft / Archive controls
   - [ ] `DOMPurify` sanitization on save (XSS prevention)
-- [ ] **Image upload** (`/api/admin/upload`): upload to Vercel Blob or S3; return URL for TipTap
+- [x] **Image upload** (`/api/admin/upload`): saves to `public/uploads/YYYY/MM/`; UUID filename; MIME + size validation; EXIF strip via `sharp`; returns `/uploads/...` URL for TipTap insertion
 - [x] **Admin article CRUD APIs** — `app/api/admin/articles/route.ts` + `[id]/route.ts`
 - [ ] **Category CRUD** (`/admin/categories`): create, rename, reorder, delete with referential check
 - [ ] **User management** (`/admin/users`, admin-only): invite editor, reset password, deactivate
 - [x] **On-demand ISR** (`/api/revalidate`) — `app/api/revalidate/route.ts`
 - [ ] **Meilisearch sync:** MongoDB change stream → index on insert/update, deindex on archive/delete
 - [ ] **E2E smoke test:** Publish via admin → ISR revalidates → article live on frontend within 5s
+
+## Phase 5: VPS Production Deployment
+
+- [ ] Provision Ubuntu VPS (minimum 2 vCPU / 4GB RAM)
+- [ ] Install Node.js 20 LTS, PM2, Nginx, Certbot on VPS
+- [ ] Create `ecosystem.config.js` with PM2 cluster mode (`instances: 'max'`, `exec_mode: 'cluster'`)
+- [ ] Configure Nginx: reverse proxy `localhost:3000` → 443; gzip compression; long `Cache-Control` for `/uploads/`
+- [ ] Obtain SSL certificate via Certbot (`certbot --nginx -d blockhay.com`)
+- [ ] Set all production env vars: `MONGODB_URI`, `NEXTAUTH_SECRET`, `REVALIDATE_SECRET`, `NEXTAUTH_URL`
+- [ ] Run `npm run build && pm2 start ecosystem.config.js` on VPS
+- [ ] Enable `pm2 startup` and `pm2 save` for reboot persistence
+- [ ] Set correct write permissions on `public/uploads/` for the Node.js process user
+- [ ] Configure logrotate for PM2 logs; set up disk usage alert at 80% capacity
+- [ ] Configure automated MongoDB Atlas backups (daily snapshot, 7-day retention)
+- [ ] CI/CD: GitHub Action on `main` push → SSH deploy (`git pull && npm run build && pm2 reload blockhay`)

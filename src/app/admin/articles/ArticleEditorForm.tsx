@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { Save, Send, Archive } from "lucide-react";
+import { Save, Send, Archive, Upload } from "lucide-react";
 
 // Load TipTap only on client — ProseMirror has no SSR support
 const RichTextEditor = dynamic(() => import("@/components/admin/RichTextEditor"), { ssr: false });
@@ -63,6 +63,35 @@ export default function ArticleEditorForm({ categories, article }: Props) {
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [featuredImageUploading, setFeaturedImageUploading] = useState(false);
+  const featuredImageFileRef = useRef<HTMLInputElement>(null);
+
+  async function handleFeaturedImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFeaturedImageUploading(true);
+    setError("");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: form });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok) {
+        setError(data.error ?? "Upload failed");
+        return;
+      }
+      setFeaturedImageUrl(data.url!);
+      // Pre-fill alt text from filename (strip extension, replace dashes with spaces)
+      if (!featuredImageAlt) {
+        setFeaturedImageAlt(file.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " "));
+      }
+    } catch {
+      setError("Upload failed — check your connection");
+    } finally {
+      setFeaturedImageUploading(false);
+      if (featuredImageFileRef.current) featuredImageFileRef.current.value = "";
+    }
+  }
 
   // Auto-generate slug from title on new articles
   function handleTitleChange(val: string) {
@@ -214,33 +243,58 @@ export default function ArticleEditorForm({ categories, article }: Props) {
       </div>
 
       {/* Featured image */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-            Featured Image URL <span className="text-red-500">*</span>
-          </label>
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          Featured Image <span className="text-red-500">*</span>
+        </label>
+
+        {/* Upload button + URL field */}
+        <div className="flex gap-2">
           <input
-            type="url"
+            ref={featuredImageFileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+            className="sr-only"
+            onChange={(e) => void handleFeaturedImageUpload(e)}
+          />
+          <button
+            type="button"
+            onClick={() => featuredImageFileRef.current?.click()}
+            disabled={featuredImageUploading}
+            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
+          >
+            <Upload size={14} />
+            {featuredImageUploading ? "Uploading…" : "Upload"}
+          </button>
+          <input
+            type="text"
             value={featuredImageUrl}
             onChange={(e) => setFeaturedImageUrl(e.target.value)}
             required
-            className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-            placeholder="https://..."
+            className="flex-1 px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+            placeholder="/uploads/image.jpg or https://external-url.com/image.jpg"
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-            Featured Image Alt <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={featuredImageAlt}
-            onChange={(e) => setFeaturedImageAlt(e.target.value)}
-            required
-            className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-            placeholder="Descriptive alt text"
+
+        {/* Preview */}
+        {featuredImageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={featuredImageUrl}
+            alt="Featured image preview"
+            className="h-28 w-auto rounded-lg border border-slate-200 dark:border-slate-700 object-cover"
           />
-        </div>
+        )}
+
+        {/* Alt text */}
+        <input
+          type="text"
+          value={featuredImageAlt}
+          onChange={(e) => setFeaturedImageAlt(e.target.value)}
+          required
+          className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+          placeholder="Alt text (required for SEO and accessibility)"
+        />
       </div>
 
       {/* Tags */}
