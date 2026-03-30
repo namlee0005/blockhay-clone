@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      # Connect to the local mongo container
+      - MONGODB_URI=mongodb://mongo:27017/blockhay
+      - AUTH_SECRET=SnPfnA3W/srpLEOJ8Oza3is07ndUoLyig7r41XifkMc=
+    volumes:
+      # Persist local uploads across container restarts
+      - uploads-data:/app/public/uploads
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
+  uploads-data:
